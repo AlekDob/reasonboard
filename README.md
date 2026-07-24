@@ -90,28 +90,78 @@ Open http://127.0.0.1:5173/
 
 ## Skills
 
-Canonical skills ship in [`skills/`](skills/) (also wired under `.claude/skills/` for Cursor / Claude Code).
+Canonical skills live in [`skills/`](skills/). This repo also wires them under [`.claude/skills/`](.claude/skills/) (symlinks), so **Cursor / Claude Code pick them up automatically** when the project is open — no install step required for local work.
 
-| Skill | Does |
-|-------|------|
-| [`ux`](skills/ux/) | UX reasoning method — questions → personas → define → gap → competitive → solution |
-| [`research`](skills/research/) | Competitive capture with **agent-browser** (screenshots + notes into the deck) |
-| [`reasonboard`](skills/reasonboard/) | Writes typed `src/content.ts` for this app |
-| `reasonboard-personas` / `competitive` / `solution` | Thin specialists the orchestrator calls |
+Index + install notes: [`skills/README.md`](skills/README.md)
 
-Install into your global Claude skills (optional):
+### What each skill does
 
-```bash
-ln -s "$(pwd)/skills/ux" ~/.claude/skills/ux
-ln -s "$(pwd)/skills/research" ~/.claude/skills/research
-ln -s "$(pwd)/skills/reasonboard" ~/.claude/skills/reasonboard
+| Skill | Does | Trigger when you say… |
+|-------|------|------------------------|
+| [`ux`](skills/ux/) | Runs the method: questions → personas → define → gap → competitive → solution outline | “help me reason about this product”, “UX case”, “build the narrative” |
+| [`research`](skills/research/) | Live competitor capture with **agent-browser** → screenshots + honest notes | “screenshot Klaviyo / peer X”, “competitive scan with real pages” |
+| [`reasonboard`](skills/reasonboard/) | Writes typed [`src/content.ts`](src/content.ts) the whiteboard can open | “turn this into a ReasonBoard deck”, “regenerate content.ts” |
+| [`reasonboard-personas`](skills/reasonboard-personas/) | Drafts 3 persona cards | (usually called by `reasonboard` / `ux`) |
+| [`reasonboard-competitive`](skills/reasonboard-competitive/) | Fills `competitorNotes` | after `research`, or from known peers |
+| [`reasonboard-solution`](skills/reasonboard-solution/) | Solution muscles + phased roadmap | slide 2 of the deck |
+
+### Recommended flow
+
+```text
+ux  →  (optional) research  →  reasonboard  →  npm run dev
 ```
 
-`research` expects [`agent-browser`](https://github.com/vercel-labs/agent-browser) on your PATH (`npm i -g agent-browser`). It does **not** vendor the whole browser skill — it tells the agent when and how to use it.
+1. **`ux`** — agent interviews you, confirms personas / define / gap / solution outline  
+2. **`research`** — optional; only if you want real competitor screenshots (`npm i -g agent-browser`)  
+3. **`reasonboard`** — agent writes `src/content.ts` from the outline  
+4. Open the app and click through the board  
+
+### Example prompts
+
+```text
+Use the ux skill: we're pitching an AI inbox for ops dashboards.
+Three personas, honest gap vs chat-only tools, then a short solution outline.
+
+Then use research to capture public pages for Peer A and Peer B into public/visuals/competitive/.
+
+Then use reasonboard to replace src/content.ts with a two-slide deck in English.
+```
+
+Or skip research and go straight to the deck:
+
+```text
+Use reasonboard: rebuild the demo deck for a B2B scheduling product.
+Ask me the brief questions first.
+```
+
+### Optional: install skills globally
+
+Only needed if you want the same skills outside this repo:
+
+```bash
+cd reasonboard
+ln -sf "$(pwd)/skills/ux" ~/.claude/skills/ux
+ln -sf "$(pwd)/skills/research" ~/.claude/skills/research
+ln -sf "$(pwd)/skills/reasonboard" ~/.claude/skills/reasonboard
+ln -sf "$(pwd)/skills/reasonboard-personas" ~/.claude/skills/reasonboard-personas
+ln -sf "$(pwd)/skills/reasonboard-competitive" ~/.claude/skills/reasonboard-competitive
+ln -sf "$(pwd)/skills/reasonboard-solution" ~/.claude/skills/reasonboard-solution
+```
+
+### `research` + agent-browser
+
+`research` does **not** vendor the full browser skill. It expects the [`agent-browser`](https://github.com/vercel-labs/agent-browser) CLI:
+
+```bash
+npm i -g agent-browser
+which agent-browser   # must be on PATH
+```
+
+If the system **agent-browser** skill is also installed on your machine, the agent should follow that for snapshot/ref details; `skills/research` adds ReasonBoard paths (`public/visuals/competitive/`, `competitorNotes` fields).
 
 ## Bring your own case
 
-1. Ask an agent with the `ux` + `reasonboard` skills, **or** edit [`src/content.ts`](src/content.ts) by hand  
+1. Run the skill flow above, **or** edit [`src/content.ts`](src/content.ts) by hand  
 2. Keep types from [`src/contentTypes.ts`](src/contentTypes.ts)  
 3. Drop images in `public/visuals/`  
 
