@@ -18,6 +18,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT" /></a>
   <a href="docs/method.md"><img src="https://img.shields.io/badge/method-Brief%20→%20Solution-0f766e?style=flat-square" alt="Method" /></a>
   <a href="skills/"><img src="https://img.shields.io/badge/skills-ux%20·%20research-0f766e?style=flat-square" alt="Skills" /></a>
+  <a href="https://alekdob.com"><img src="https://img.shields.io/badge/alekdob.com-111111?style=flat-square" alt="alekdob.com" /></a>
 </p>
 
 ---
@@ -203,4 +204,4 @@ reasonboard/
 
 ## License
 
-MIT © [Alek](https://github.com/AlekDob)
+MIT © [Alek](https://github.com/AlekDob) · [alekdob.com](https://alekdob.com)
