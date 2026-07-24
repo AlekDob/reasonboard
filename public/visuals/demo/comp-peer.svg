@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360">
+  <rect width="640" height="360" rx="24" fill="#f7faf9" stroke="#0d9488" stroke-width="3"/>
+  <rect x="40" y="40" width="200" height="28" rx="8" fill="#0d9488" opacity="0.2"/>
+  <rect x="40" y="90" width="560" height="16" rx="6" fill="#cbd5d1"/>
+  <rect x="40" y="120" width="420" height="16" rx="6" fill="#cbd5d1"/>
+  <rect x="40" y="180" width="260" height="120" rx="16" fill="#fff" stroke="#0d9488" stroke-width="2"/>
+  <rect x="320" y="180" width="260" height="120" rx="16" fill="#fff" stroke="#94a3b8" stroke-width="2"/>
+  <text x="320" y="40" text-anchor="middle" dominant-baseline="hanging" font-family="Inter,system-ui,sans-serif" font-size="22" font-weight="700" fill="#0f172a">PulseChat</text>
+</svg>
