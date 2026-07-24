@@ -4,6 +4,16 @@ How `content.ts` becomes a pannable, zoomable board — and what's editable in D
 
 Source of truth: [`src/whiteboard/`](../src/whiteboard/). This doc explains the architecture; for the data model itself see [`docs/content-schema.md`](content-schema.md).
 
+**Agent feature-docs** (tables only, living map of components):
+
+| Doc | Covers |
+|-----|--------|
+| [`001-deep-dive-whiteboard`](../documentation/features/001-deep-dive-whiteboard.md) | Scene stack, content cards, solution notes |
+| [`002-whiteboard-camera-pan`](../documentation/features/002-whiteboard-camera-pan.md) | Zoom, pan, Space, fit camera |
+| [`003-whiteboard-local-editor`](../documentation/features/003-whiteboard-local-editor.md) | DEV multi-select, edit, Save/Reset, stickers |
+| [`004-dive-sibling-nav`](../documentation/features/004-dive-sibling-nav.md) | Footer floor pager + optional nudge |
+| [`005-content-deck-model`](../documentation/features/005-content-deck-model.md) | Typed `Deck` / skills boundary |
+
 ## Architecture
 
 ```

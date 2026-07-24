@@ -84,6 +84,8 @@ In a local `npm run dev` session you also get a DEV-only board editor: multi-sel
 
 Full write-up (architecture, scene keys, `diveNav`, prod vs DEV): [`docs/ENGINE.md`](docs/ENGINE.md)
 
+Living feature map for agents (tables only): [`documentation/features/`](documentation/features/) — deep-dive · camera · local editor · dive nav · content model.
+
 ## Quick start
 
 ```bash
@@ -199,15 +201,18 @@ npm run build
 
 ```
 reasonboard/
-├── skills/               # ux · research · reasonboard (canonical)
-├── .claude/skills/       # symlinks for in-repo agents
-├── docs/                 # method + schema
-├── public/visuals/       # demo + README screenshots
+├── skills/                 # ux · research · reasonboard (canonical)
+├── .claude/skills/         # symlinks for in-repo agents
+├── docs/                   # method · schema · ENGINE.md
+├── documentation/
+│   ├── features/           # agent feature-docs (001–005)
+│   └── diary/              # what changed when
+├── public/visuals/         # demo + README screenshots
 └── src/
-    ├── content.ts        # ← your deck (swap this)
+    ├── content.ts          # ← your deck (swap this)
     ├── contentTypes.ts
     ├── App.tsx
-    └── whiteboard/       # freeform engine
+    └── whiteboard/         # freeform engine (+ saved-layouts/ in DEV)
 ```
 
 ## License
