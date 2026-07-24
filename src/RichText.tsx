@@ -1,4 +1,4 @@
-/** Supporta **grassetto** inline */
+/** Supports inline **bold** */
 export function RichText({ text }: { text: string }) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return (

@@ -24,22 +24,24 @@ type DeckMeta = {
   lede: string
   seedStickies?: [string, string]
   connectorColor?: string
+  stickers?: DeckMetaSticker[]   // frameless PNG/SVG seeded top-right of the root board
 }
 ```
 
 ## Section
 
-A deep-diveable card on the root board. Optional payloads drive auto-layout:
+A deep-diveable card on the root board (unless `onRoot: false` — then it's reachable only via another section, e.g. a solution branch). Optional payloads drive auto-layout:
 
 | Field | Renders as |
 |-------|------------|
-| `body`, `takeaway`, `methodNote` | Text + stickies |
+| `body`, `takeaway`, `methodNote` (+ `methodTitle` / `methodEyebrow`) | Text + stickies |
 | `personas` | Persona cards |
 | `define` | Four define cards |
 | `criteria` / `semaforo` | Criteria + traffic light |
 | `competitorNotes` | Competitor list → detail |
 | `pairs` | Problem / solution cards |
 | `ideas` / `bugs` | Openable idea/bug list |
+| `solutionNotes` | Post-its with branches (memory text, or `openSectionId` → nested deep dive) |
 | `image` / `images` | Hero / gallery |
 
 ## Persona

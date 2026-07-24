@@ -1,9 +1,12 @@
 import {
+  STICKER_H,
+  STICKER_W,
   STICKY_COLORS,
   nodeCardDims,
   type BoardConnector,
   type BoardItem,
   type BoardNode,
+  type BoardSticker,
   type BoardSticky,
   type BoardText,
 } from "./types";
@@ -105,9 +108,22 @@ export function layoutSlideBoard(
 
   const connectorColor = meta.connectorColor ?? "#0d9488";
 
+  const seedStickers: BoardSticker[] = (meta.stickers ?? []).map((s, i) => ({
+    kind: "sticker",
+    id: `sticker-${s.id}`,
+    src: s.src,
+    alt: s.alt,
+    x: stickyRight - STICKER_W,
+    y: cardsY - STICKER_H - 28 - i * (STICKER_H + 12),
+    w: STICKER_W,
+    h: STICKER_H,
+    rotate: s.rotate ?? -6,
+  }));
+
   return [
     ...texts,
     ...seedStickies,
+    ...seedStickers,
     ...nodes,
     ...makeConnectors(
       nodeDefs.map((nDef) => nDef.id),

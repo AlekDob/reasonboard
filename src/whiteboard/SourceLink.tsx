@@ -25,7 +25,7 @@ function stopBubble(e: MouseEvent | PointerEvent) {
   e.stopPropagation();
 }
 
-/** Icona + label «Fonte» → apre URL in nuova tab (non interferisce con zoom/drag). */
+/** Icon + "Source" label → opens the URL in a new tab (doesn't interfere with zoom/drag). */
 export function SourceLink({ href }: { href: string }) {
   return (
     <a
@@ -39,7 +39,7 @@ export function SourceLink({ href }: { href: string }) {
       title={href}
     >
       <ExternalIcon />
-      <span>Fonte</span>
+      <span>Source</span>
     </a>
   );
 }

@@ -26,6 +26,27 @@ export type ProblemSolutionPair = {
   mockupCaption?: string;
 };
 
+/** Destination from a solution note (arrow): memory, or a card that opens a nested deep dive */
+export type SolutionBranch = {
+  id: string;
+  title: string;
+  text: string;
+  /** Click / Open → nested section (Esc returns to the note) */
+  openSectionId?: string;
+  image?: string;
+  eyebrow?: string;
+};
+
+/** Solution note (post-it) tied to a pillar / capability */
+export type SolutionNote = {
+  id: string;
+  title: string;
+  /** One line: what it solves, for whom */
+  text: string;
+  /** Destinations with an arrow (e.g. memory / a related deep dive) */
+  branches?: SolutionBranch[];
+};
+
 export type DefineBrief = {
   problem: string;
   user: string;
@@ -96,11 +117,22 @@ export type Section = {
   eyebrow: string;
   title: string;
   summary: string;
+  /**
+   * If false: not a node on the root board (nested deep dive only,
+   * reached only via a solution branch or another section). Default true.
+   */
+  onRoot?: boolean;
   body: string[];
   takeaway?: string;
   /** Method / framing sticky (yellow paper) */
   methodNote?: string;
+  /** Method note card title (default: "What I'm doing") */
+  methodTitle?: string;
+  /** Method note card eyebrow (default: "Method") */
+  methodEyebrow?: string;
   pairs?: ProblemSolutionPair[];
+  /** Solution notes (post-its) tied to the pillars found in research */
+  solutionNotes?: SolutionNote[];
   image?: string;
   images?: EvidenceImage[];
   competitorNotes?: CompetitorNote[];
@@ -115,6 +147,14 @@ export type Section = {
 /** @deprecated use Section — kept as alias for gradual migration */
 export type ModalSection = Section;
 
+/** Optional PNG/SVG sticker seeded onto the root board (e.g. a partner logo) */
+export type DeckMetaSticker = {
+  id: string;
+  src: string;
+  alt?: string;
+  rotate?: number;
+};
+
 /** Root board chrome + seed stickies for one slide */
 export type DeckMeta = {
   eyebrow: string;
@@ -124,6 +164,8 @@ export type DeckMeta = {
   seedStickies?: [string, string];
   /** Accent for connectors; defaults to CSS token */
   connectorColor?: string;
+  /** Frameless image stickers seeded near the top-right of the root board */
+  stickers?: DeckMetaSticker[];
 };
 
 export type DeckSlide = {
@@ -135,6 +177,8 @@ export type DeckSlide = {
   sections: Section[];
   /** Visual tone for mobile intro */
   tone?: "default" | "solution";
+  /** After closing this section's deep-dive, dispatch reasonboard:nudge-next (optional) */
+  nudgeNextAfterId?: string;
 };
 
 export type Deck = {

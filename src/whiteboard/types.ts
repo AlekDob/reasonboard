@@ -23,7 +23,7 @@ export type BoardSticky = {
   color: string;
 };
 
-/** Freccia che collega due elementi (si aggiorna quando li sposti) */
+/** Arrow linking two elements (updates automatically when you move them) */
 export type BoardConnector = {
   kind: "connector";
   id: string;
@@ -57,7 +57,8 @@ export type ContentCardVariant =
   | "semaforo"
   | "define"
   | "image"
-  | "competitor";
+  | "competitor"
+  | "solution";
 
 export type ContentBlock = {
   label: string;
@@ -66,7 +67,7 @@ export type ContentBlock = {
   tone?: "default" | "fit";
 };
 
-/** Card contenuto in deep-dive (persona, bug, idea, criterio…) */
+/** Content card in a deep-dive (persona, bug, idea, criterion…) */
 export type BoardContentCard = {
   kind: "contentCard";
   id: string;
@@ -78,22 +79,24 @@ export type BoardContentCard = {
   eyebrow?: string;
   image?: string;
   tag?: string;
-  /** Colore tag (bug vs limit vs idea) */
+  /** Tag color (bug vs limit vs idea) */
   tagKind?: "bug" | "limit" | "idea";
   accent?: "green" | "yellow" | "red";
-  /** Blocchi tipizzati (persona / define) con label colorata */
+  /** Typed blocks (persona / define) with a colored label */
   blocks?: ContentBlock[];
-  /** Click apre scena idea nested */
+  /** Click opens a nested idea scene */
   openIdeaId?: string;
-  /** Click apre guida competitor nested */
+  /** Click opens a nested competitor guide */
   openCompetitorId?: string;
-  /** Click apre lightbox zoom (card solo-immagine) */
+  /** Click opens a nested section (e.g. solution branch → deep dive) */
+  openSectionId?: string;
+  /** Click opens a zoom lightbox (image-only card) */
   zoomSrc?: string;
-  /** Link fonte (icona in caption) */
+  /** Source link (icon in caption) */
   href?: string;
-  /** Rotazione whiteboard (gradi) */
+  /** Whiteboard rotation (degrees) */
   rotate?: number;
-  /** Tinta carta (sticky-like) */
+  /** Paper tint (sticky-like) */
   paper?: "cream" | "blush" | "mint" | "sky" | "peach" | "butter" | "white";
   w?: number;
   h?: number;
@@ -112,6 +115,19 @@ export type BoardImage = {
   h?: number;
 };
 
+/** PNG/SVG “sticker” frameless — draggable in DEV like a sticky */
+export type BoardSticker = {
+  kind: "sticker";
+  id: string;
+  x: number;
+  y: number;
+  src: string;
+  alt?: string;
+  rotate?: number;
+  w?: number;
+  h?: number;
+};
+
 export type BoardItem =
   | BoardNode
   | BoardSticky
@@ -119,20 +135,21 @@ export type BoardItem =
   | BoardStroke
   | BoardText
   | BoardContentCard
-  | BoardImage;
+  | BoardImage
+  | BoardSticker;
 
 export type PositionedItem = Exclude<BoardItem, BoardConnector | BoardStroke>;
 
 export const STICKY_COLORS = ["#ffe08a", "#ffb4c4", "#b8e0d2", "#c5d4ff", "#ffd6a5"];
 
 /**
- * Fallback / slide 2 (6 nodi). Slide 1 (≤4) usa `nodeCardDims`.
- * Deve restare allineato a `.wb-item .node` e a `layout.ts`.
+ * Fallback for larger root boards (6 nodes). Boards with ≤4 use `nodeCardDims`.
+ * Must stay aligned with `.wb-item .node` and `layout.ts`.
  */
 export const NODE_CARD_W = 176;
 export const NODE_CARD_H = 248;
 
-/** Dimensioni root-node in base al numero di card sulla lavagna */
+/** Root-node dimensions based on the number of cards on the board */
 export function nodeCardDims(count: number): { w: number; h: number } {
   if (count <= 4) return { w: 236, h: 312 };
   if (count === 5) return { w: 200, h: 280 };
@@ -143,6 +160,8 @@ export const CONTENT_CARD_W = 220;
 export const CONTENT_CARD_H = 260;
 export const IMAGE_CARD_W = 280;
 export const IMAGE_CARD_H = 200;
+export const STICKER_W = 140;
+export const STICKER_H = 97;
 
 export function itemSize(item: PositionedItem): { w: number; h: number } {
   switch (item.kind) {
@@ -160,6 +179,8 @@ export function itemSize(item: PositionedItem): { w: number; h: number } {
       };
     case "image":
       return { w: item.w ?? IMAGE_CARD_W, h: item.h ?? IMAGE_CARD_H };
+    case "sticker":
+      return { w: item.w ?? STICKER_W, h: item.h ?? STICKER_H };
     case "text":
       if (item.role === "title") return { w: 560, h: 150 };
       if (item.role === "lede") return { w: 520, h: 96 };
@@ -167,7 +188,7 @@ export function itemSize(item: PositionedItem): { w: number; h: number } {
   }
 }
 
-/** Punti di aggancio bordo → bordo, con padding dal bordo dell’elemento */
+/** Edge-to-edge connection points, with padding from the element's border */
 export function connectionPoints(
   from: PositionedItem,
   to: PositionedItem,
@@ -220,6 +241,7 @@ export function isPositioned(item: BoardItem): item is PositionedItem {
     item.kind === "sticky" ||
     item.kind === "text" ||
     item.kind === "contentCard" ||
-    item.kind === "image"
+    item.kind === "image" ||
+    item.kind === "sticker"
   );
 }

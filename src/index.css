@@ -166,7 +166,7 @@ button {
   color: var(--mn-accent);
 }
 
-/* Slide 2 · soluzione: solo titolo enfatizzato + numeri (Apri / chrome restano rosa) */
+/* Solution-tone slide: only the emphasized title + numbers change color (Open / chrome stay default) */
 .slide-solution .headline em,
 .slide-solution .node-num {
   color: var(--mn-green);
@@ -368,6 +368,35 @@ button {
   color: rgba(0, 0, 0, 0.45);
   font-variant-numeric: tabular-nums;
   user-select: none;
+}
+
+.nav-dive .nav-btn-up {
+  margin-right: 4px;
+}
+
+.dive-counter {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 3.4em;
+  line-height: 1.15;
+}
+
+.dive-floor {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rb-accent);
+}
+
+.dive-pos {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(0, 0, 0, 0.45);
+  font-variant-numeric: tabular-nums;
 }
 
 /* Slide 2 */
@@ -1651,7 +1680,7 @@ button {
   z-index: 1;
 }
 
-/* Deep-dive: barra più alta per Indietro + crumb */
+/* Deep-dive: taller topbar to fit the back button + crumb */
 body.wb-deep-open .topbar-wb {
   min-height: 92px;
   align-items: flex-start;
@@ -1750,6 +1779,26 @@ body.wb-deep-open .topbar-wb {
   box-shadow: 0 0 0 6px rgba(13, 148, 136, 0.18);
 }
 
+.wb-connector.selected path[stroke]:not([stroke="transparent"]) {
+  filter: drop-shadow(0 0 4px rgba(13, 148, 136, 0.55));
+}
+
+.wb-connector-del-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 108px;
+  transform: translateX(-50%);
+  z-index: 12;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.88);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .wb-connector-del {
   position: absolute;
   right: 20px;
@@ -1796,13 +1845,13 @@ body.wb-deep-open .topbar-wb {
   cursor: grabbing;
 }
 
-/* Nodo root: chrome su .node (dentro EnterWrap), non sul wb-item */
+/* Root node: chrome lives on .node (inside EnterWrap), not on wb-item */
 .wb-item .node {
   width: 176px;
   flex: none;
 }
 
-/* Slide 1 (≤4 nodi): card più grandi + tipografia allineata */
+/* Root board with ≤4 nodes: bigger cards + aligned typography */
 .wb-item .node.node-lg {
   padding: 18px 16px 14px;
 }
@@ -1907,6 +1956,91 @@ body.wb-deep-open .topbar-wb {
 
 .wb-item:hover .wb-item-del {
   opacity: 1;
+}
+
+.wb-item.wb-selected {
+  outline: 2px solid var(--rb-accent);
+  outline-offset: 4px;
+  border-radius: 4px;
+  z-index: 6;
+}
+
+.wb-item.wb-selected.wb-content-card,
+.wb-item.wb-selected.wb-sticky-wrap,
+.wb-item.wb-selected.wb-node-wrap {
+  border-radius: 10px;
+}
+
+.wb-item.wb-text .wb-item-del,
+.wb-item.wb-content-card .wb-item-del {
+  opacity: 0;
+}
+
+.wb-item.wb-text:hover .wb-item-del,
+.wb-item.wb-content-card:hover .wb-item-del,
+.wb-item.wb-selected .wb-item-del {
+  opacity: 1;
+}
+
+.wb-marquee {
+  position: absolute;
+  z-index: 3;
+  border: 1.5px dashed var(--rb-accent);
+  background: rgba(13, 148, 136, 0.08);
+  border-radius: 4px;
+  pointer-events: none;
+}
+
+.wb-cc-edit-field {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 4px 0;
+  padding: 6px 8px;
+  border: 1px solid rgba(13, 148, 136, 0.35);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.9);
+  font: inherit;
+  color: inherit;
+  resize: vertical;
+}
+
+.wb-cc-edit-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.wb-cc-edit-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wb-cc-edit-text,
+.wb-cc-blocks .wb-cc-edit-field {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  min-height: 64px;
+}
+
+.wb-cc-editing {
+  outline: 2px dashed rgba(13, 148, 136, 0.45);
+  outline-offset: 2px;
+}
+
+.wb-text-edit {
+  display: block;
+  width: min(520px, 70vw);
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid rgba(13, 148, 136, 0.4);
+  border-radius: 8px;
+  background: rgba(255, 253, 249, 0.98);
+  font: inherit;
+  color: #1a1a1a;
+  resize: vertical;
 }
 
 /* Freeform toolbar */
@@ -2046,6 +2180,51 @@ body.wb-deep-open .topbar-wb {
 .ff-swatch.active {
   border-color: #111;
   transform: scale(1.12);
+}
+
+.ff-tool-save.has-label {
+  width: auto;
+  padding: 0 12px;
+  gap: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ff-save-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Optional / generic: from a board node to the → nav button (see SlideAdvanceHint) */
+.slide-advance-hint {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 30;
+  overflow: visible;
+}
+
+.slide-advance-hint-path,
+.slide-advance-hint-head {
+  opacity: 1;
+}
+
+@media (max-width: 1366px) {
+  .slide-advance-hint {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide-advance-hint-path,
+  .slide-advance-hint-head {
+    opacity: 0.85;
+  }
 }
 
 .deck .footer-bar {
@@ -2205,7 +2384,7 @@ body.wb-deep-open .topbar-wb {
   }
 }
 
-/* Tablet / iPad: colonna un po’ più larga ma non full-bleed */
+/* Tablet / iPad: slightly wider column, but not full-bleed */
 @media (min-width: 601px) and (max-width: 1366px) {
   .slide-mobile {
     padding: 28px 48px 88px !important;
@@ -2806,6 +2985,11 @@ button.wb-cc {
   color: var(--mn-accent);
 }
 
+.wb-cc-tag-solution {
+  background: rgba(13, 148, 136, 0.12);
+  color: var(--rb-accent);
+}
+
 .wb-cc-accent-green {
   background: #eef8f1;
   border-color: rgba(46, 125, 80, 0.22);
@@ -2890,6 +3074,54 @@ button.wb-cc {
   object-fit: contain;
   background: #1a1a1a;
   cursor: zoom-in;
+}
+
+.wb-cc-solution {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.wb-cc-solution::after {
+  background: rgba(184, 224, 210, 0.85);
+  border-color: rgba(80, 140, 120, 0.3);
+}
+
+.wb-cc-media-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: #1a1a1a;
+  cursor: zoom-in;
+  flex-shrink: 0;
+}
+
+.wb-cc-media-btn:disabled {
+  cursor: default;
+}
+
+.wb-cc-media {
+  display: block;
+  width: 100%;
+  height: 148px;
+  object-fit: contain;
+  object-position: center;
+  background: #1a1a1a;
+  pointer-events: none;
+}
+
+.wb-cc-body-solution {
+  padding: 10px 12px 12px;
+  gap: 6px;
+  flex: 1;
+}
+
+.wb-cc-solution .wb-cc-title {
+  font-size: 15px;
+  letter-spacing: -0.01em;
 }
 
 .wb-lightbox {
@@ -3193,6 +3425,76 @@ button.wb-img.is-zoomable {
 .mobile-deep-img img {
   height: auto;
   max-height: 280px;
+}
+
+/* Sticker PNG/SVG — frameless, draggable board decoration */
+.wb-sticker-wrap {
+  cursor: grab;
+}
+
+.wb-sticker-wrap:active {
+  cursor: grabbing;
+}
+
+.wb-sticker {
+  position: relative;
+  display: block;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.12));
+  user-select: none;
+}
+
+.wb-sticker img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.wb-sticker-wrap.wb-selected .wb-sticker {
+  outline: 2px dashed rgba(13, 148, 136, 0.55);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+
+.wb-sticker .wb-sticker-del,
+.wb-sticker .wb-sticker-resize {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+.wb-sticker-del {
+  top: -10px;
+  left: -10px;
+  right: auto;
+}
+
+.wb-sticker-resize {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: nesw-resize;
+  z-index: 6;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22);
+  padding: 0;
+}
+
+.wb-sticker-resize:hover {
+  background: var(--rb-accent);
+}
+
+.wb-sticker-resize:active {
+  cursor: nesw-resize;
 }
 
 /* —— Password gate (consegna) —— */

@@ -3,8 +3,8 @@ import { isPositioned, itemSize, type BoardItem } from "./types";
 export type Cam = { scale: number; x: number; y: number };
 
 /**
- * Zoom/pan iniziali così il contenuto della scena entra nella viewport
- * (con padding per topbar + toolbar). Cap a 1 = mai zoom-in forzato.
+ * Initial zoom/pan so the scene content fits the viewport
+ * (with padding for topbar + toolbar). Capped at 1 = never force zoom-in.
  */
 export function fitCameraToItems(
   items: BoardItem[],
@@ -28,7 +28,7 @@ export function fitCameraToItems(
   let maxX = -Infinity;
   let maxY = -Infinity;
   for (const it of positioned) {
-    // Hint di navigazione: non allarga il frame
+    // Navigation hint sticky: doesn't widen the frame
     if (it.kind === "sticky" && it.id.startsWith("st-hint-")) continue;
     const s = itemSize(it);
     minX = Math.min(minX, it.x);

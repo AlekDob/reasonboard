@@ -9,10 +9,16 @@ type Props = {
   onColor: (c: string) => void;
   onUndo: () => void;
   canUndo: boolean;
-  onClearDrawings: () => void;
+  /** If absent, hides the clear-drawings button (prod). */
+  onClearDrawings?: () => void;
   /** Hold Space: pan mode */
   spacePan?: boolean;
   panning?: boolean;
+  onSave?: () => void;
+  onReset?: () => void;
+  saveBusy?: boolean;
+  saveLabel?: string;
+  canReset?: boolean;
 };
 
 const COLORS = ["#111111", "#2b7bb9", "#16a34a", "#eab308", "#0d9488"];
@@ -131,6 +137,43 @@ function IconClear() {
   );
 }
 
+function IconSave() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+      <path
+        d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M8 5v5h7V5M8 19v-6h8v6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconReset() {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
+      <path
+        d="M4 12a8 8 0 1 0 2.3-5.7M4 4v5h5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function FreeformToolbar({
   tool,
   onTool,
@@ -141,6 +184,11 @@ export function FreeformToolbar({
   onClearDrawings,
   spacePan = false,
   panning = false,
+  onSave,
+  onReset,
+  saveBusy = false,
+  saveLabel,
+  canReset = false,
 }: Props) {
   const showColors = tool === "pencil" || tool === "sticky";
   const selectActive = tool === "select" || spacePan;
@@ -247,18 +295,49 @@ export function FreeformToolbar({
         )}
       </AnimatePresence>
 
-      <div className="ff-sep" />
+      {(onClearDrawings || onSave) && <div className="ff-sep" />}
 
-      <button
-        type="button"
-        className="ff-tool"
-        onClick={onClearDrawings}
-        title="Clear drawings"
-        aria-label="Clear drawings"
-        disabled={spacePan}
-      >
-        <IconClear />
-      </button>
+      {onClearDrawings && (
+        <button
+          type="button"
+          className="ff-tool"
+          onClick={onClearDrawings}
+          title="Clear drawings"
+          aria-label="Clear drawings"
+          disabled={spacePan}
+        >
+          <IconClear />
+        </button>
+      )}
+
+      {onSave && (
+        <>
+          <div className="ff-sep" />
+          <button
+            type="button"
+            className={`ff-tool ff-tool-save${saveLabel ? " has-label" : ""}`}
+            onClick={onSave}
+            title="Save layout + view (localhost)"
+            aria-label="Save layout"
+            disabled={spacePan || saveBusy}
+          >
+            <IconSave />
+            {saveLabel ? <span className="ff-save-label">{saveLabel}</span> : null}
+          </button>
+          {onReset && (
+            <button
+              type="button"
+              className="ff-tool"
+              onClick={onReset}
+              title="Reset layout (auto layout)"
+              aria-label="Reset layout"
+              disabled={spacePan || saveBusy || !canReset}
+            >
+              <IconReset />
+            </button>
+          )}
+        </>
+      )}
     </div>,
     document.body,
   );

@@ -16,7 +16,7 @@ function isVideoSrc(src: string): boolean {
   return /\.(mp4|webm|mov)(\?|$)/i.test(src);
 }
 
-/** Overlay zoom per card immagine/video (Esc / click fuori / ×). */
+/** Zoom overlay for image/video cards (Esc / click outside / ×). */
 export function ImageLightbox({ src, caption, href, onClose }: Props) {
   const reduce = useReducedMotion();
   const video = Boolean(src && isVideoSrc(src));
@@ -40,14 +40,14 @@ export function ImageLightbox({ src, caption, href, onClose }: Props) {
           className="wb-lightbox"
           role="dialog"
           aria-modal="true"
-          aria-label={caption || (video ? "Anteprima video" : "Anteprima immagine")}
+          aria-label={caption || (video ? "Video preview" : "Image preview")}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           onClick={onClose}
         >
-          <button type="button" className="wb-lightbox-close" onClick={onClose} aria-label="Chiudi">
+          <button type="button" className="wb-lightbox-close" onClick={onClose} aria-label="Close">
             ×
           </button>
           <motion.figure

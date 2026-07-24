@@ -1,10 +1,11 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import type { IdeaItem, ModalSection } from "../contentTypes";
+import type { CompetitorNote, IdeaItem, ModalSection } from "../contentTypes";
 import { RichText } from "../RichText";
 import { MobileContentCard } from "./BoardItems";
 import {
+  mobileCompetitorBlocks,
   mobileDeepBlocks,
   mobileIdeaBlocks,
   type MobileDeepBlock,
@@ -24,14 +25,22 @@ type Props = {
   section: ModalSection | null;
   idea: IdeaItem | null;
   ideaIndex: number;
+  competitor: CompetitorNote | null;
+  competitorIndex: number;
+  /** Parent section when nested inside another section's deep dive (e.g. a solution branch) */
+  parentSection?: ModalSection | null;
   onClose: () => void;
-  onBackFromIdea: () => void;
+  onBackFromChild: () => void;
   onOpenIdea: (id: string) => void;
+  onOpenCompetitor: (id: string) => void;
+  onOpenSection?: (id: string) => void;
 };
 
 function Blocks({
   blocks,
   onOpenIdea,
+  onOpenCompetitor,
+  onOpenSection,
   onZoom,
   stagger,
   sceneToken,
@@ -40,6 +49,8 @@ function Blocks({
 }: {
   blocks: MobileDeepBlock[];
   onOpenIdea?: (id: string) => void;
+  onOpenCompetitor?: (id: string) => void;
+  onOpenSection?: (id: string) => void;
   onZoom?: (src: string, caption?: string, href?: string) => void;
   stagger: boolean;
   sceneToken: string;
@@ -91,15 +102,19 @@ function Blocks({
               accent={b.accent}
               blocks={b.blocks}
               openIdeaId={b.openIdeaId}
+              openCompetitorId={b.openCompetitorId}
+              openSectionId={b.openSectionId}
               zoomSrc={b.zoomSrc}
               href={b.href}
               onOpenIdea={onOpenIdea}
+              onOpenCompetitor={onOpenCompetitor}
+              onOpenSection={onOpenSection}
               onZoom={onZoom}
             />
           );
         }
 
-        // Stack al centro della lista (sovrapposizione)
+        // Stack at the center of the list (overlap)
         const collapse = { dx: 0, dy: (mid - i) * 56 };
 
         return (
@@ -124,9 +139,14 @@ export function MobileDeepBoard({
   section,
   idea,
   ideaIndex,
+  competitor,
+  competitorIndex,
+  parentSection = null,
   onClose,
-  onBackFromIdea,
+  onBackFromChild,
   onOpenIdea,
+  onOpenCompetitor,
+  onOpenSection,
 }: Props) {
   const reduce = useReducedMotion();
   const [navDir, setNavDir] = useState<NavDir>("in");
@@ -138,6 +158,8 @@ export function MobileDeepBoard({
     caption?: string;
     href?: string;
   } | null>(null);
+
+  const child = idea ?? competitor;
 
   useEffect(() => {
     if (!section) return;
@@ -151,8 +173,7 @@ export function MobileDeepBoard({
   }, [section]);
 
   useEffect(() => {
-    // Nuova sezione: ingresso “in”
-    if (section && !idea) setNavDir("in");
+    if (section && !child) setNavDir("in");
   }, [section?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -184,16 +205,34 @@ export function MobileDeepBoard({
         return;
       }
       if (collapsing) return;
-      pendingNav.current = idea ? onBackFromIdea : onClose;
+      pendingNav.current = child ? onBackFromChild : onClose;
       setNavDir("out");
       setCollapsing(true);
     };
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
-  }, [section, idea, onClose, onBackFromIdea, lightbox, collapsing]);
+  }, [section, child, onClose, onBackFromChild, lightbox, collapsing]);
 
   const sectionBlocks = section ? mobileDeepBlocks(section) : [];
   const ideaBlocks = idea ? mobileIdeaBlocks(idea, ideaIndex) : [];
+  const competitorBlocks = competitor
+    ? mobileCompetitorBlocks(competitor, competitorIndex)
+    : [];
+  const activeBlocks = idea
+    ? ideaBlocks
+    : competitor
+      ? competitorBlocks
+      : sectionBlocks;
+
+  const backLabel = idea
+    ? "← Idea list"
+    : competitor
+      ? "← Competitor list"
+      : parentSection
+        ? `← ${parentSection.eyebrow.replace(/^\d+\s*·\s*/, "").trim() || parentSection.title}`
+        : "← Board";
+
+  const crumbTitle = idea?.title ?? competitor?.title ?? section?.title ?? "";
 
   return createPortal(
     <>
@@ -216,40 +255,46 @@ export function MobileDeepBoard({
                 className="wb-deep-back"
                 disabled={collapsing}
                 onClick={() => {
-                  if (idea) requestBack(onBackFromIdea);
+                  if (child) requestBack(onBackFromChild);
                   else requestBack(onClose);
                 }}
               >
-                {idea ? "← Idea list" : "← Board"}
+                {backLabel}
               </button>
               <span className="wb-deep-crumb" id={`mobile-deep-${section.id}`}>
-                {idea ? idea.title : section.title}
+                {crumbTitle}
               </span>
             </div>
 
             <div className="mobile-deep-scroll">
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={idea ? `idea-${idea.id}` : `sec-${section.id}`}
+                  key={
+                    idea
+                      ? `idea-${idea.id}`
+                      : competitor
+                        ? `comp-${competitor.id}`
+                        : `sec-${section.id}`
+                  }
                   initial={zoom.initial}
                   animate={zoom.animate}
                   exit={zoom.exit}
                   transition={zoom.transition}
-                  style={{ transformOrigin: "50% 0%" }}
                 >
                   <Blocks
-                    blocks={idea ? ideaBlocks : sectionBlocks}
-                    onOpenIdea={
-                      idea || collapsing
-                        ? undefined
-                        : (id) => {
-                            setNavDir("in");
-                            onOpenIdea(id);
-                          }
-                    }
+                    blocks={activeBlocks}
+                    onOpenIdea={onOpenIdea}
+                    onOpenCompetitor={onOpenCompetitor}
+                    onOpenSection={onOpenSection}
                     onZoom={(src, caption, href) => setLightbox({ src, caption, href })}
                     stagger={!reduce}
-                    sceneToken={idea ? `idea-${idea.id}` : `sec-${section.id}`}
+                    sceneToken={
+                      idea
+                        ? `idea-${idea.id}`
+                        : competitor
+                          ? `comp-${competitor.id}`
+                          : `sec-${section.id}`
+                    }
                     navDir={navDir}
                     collapsing={collapsing}
                   />

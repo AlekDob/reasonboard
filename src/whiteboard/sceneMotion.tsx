@@ -9,10 +9,10 @@ export type NavDir = "in" | "out";
 export type CollapseOffset = { dx: number; dy: number };
 
 /**
- * Ingresso staggered una sola volta per scena.
- * - navDir=out in ingresso: espande dallo stack centrale
- * - collapsing=true: collassa verso il centro (prima di salire di livello)
- * - exit con navDir=out: collasso di sicurezza se lo smontaggio arriva comunque
+ * Staggered entrance, played once per scene.
+ * - navDir=out on entry: expands from the central stack
+ * - collapsing=true: collapses toward the center (before going up a level)
+ * - exit with navDir=out: safety collapse in case unmount happens anyway
  */
 export function EnterWrap({
   delay = 0,
@@ -27,7 +27,7 @@ export function EnterWrap({
   enabled: boolean;
   sceneToken?: string;
   navDir?: NavDir;
-  /** Collasso attivo sul livello corrente (prima del cambio scena) */
+  /** Active collapse on the current level (before the scene changes) */
   collapsing?: boolean;
   collapse?: CollapseOffset | null;
   children: ReactNode;
@@ -108,7 +108,7 @@ export function EnterWrap({
   );
 }
 
-/** Varianti zoom scena: in = zoom into nodo, out = dopo collasso stack → livello sopra */
+/** Scene zoom variants: in = zoom into node, out = after stack collapse → level above */
 export function sceneMotion(dir: NavDir, reduce: boolean | null) {
   if (reduce) {
     return {
@@ -161,5 +161,188 @@ export function collapseToward(
   };
 }
 
-/** Durata collasso (stagger max ~14 * 22ms + 360ms) */
+/** Collapse duration (stagger max ~14 * 22ms + 360ms) */
 export const COLLAPSE_MS = 520;
+
+/**
+ * SVG arrow with draw-in / fade-out aligned to the node stagger.
+ * pathLength: the line "draws itself"; on collapse it retracts.
+ * Wide hit area + × at the center when selected (DEV delete).
+ */
+export function AnimatedConnector({
+  d,
+  color,
+  strokeWidth,
+  markerId,
+  delay = 0,
+  enabled,
+  sceneToken,
+  navDir = "in",
+  collapsing = false,
+  selected = false,
+  midX,
+  midY,
+  onSelect,
+  onDelete,
+}: {
+  d: string;
+  color: string;
+  strokeWidth: number;
+  markerId: string;
+  delay?: number;
+  enabled: boolean;
+  sceneToken?: string;
+  navDir?: NavDir;
+  collapsing?: boolean;
+  selected?: boolean;
+  midX?: number;
+  midY?: number;
+  onSelect?: () => void;
+  onDelete?: () => void;
+}) {
+  const reduce = useReducedMotion();
+  const played = useRef(false);
+  const prevToken = useRef(sceneToken);
+
+  if (prevToken.current !== sceneToken) {
+    prevToken.current = sceneToken;
+    played.current = false;
+  }
+
+  const hit = (
+    <path
+      d={d}
+      fill="none"
+      stroke="transparent"
+      strokeWidth="28"
+      style={{ cursor: "pointer", pointerEvents: "stroke" }}
+      onPointerDown={(e) => {
+        e.stopPropagation();
+        onSelect?.();
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect?.();
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onDelete?.();
+      }}
+    />
+  );
+
+  const delBtn =
+    selected && onDelete && midX != null && midY != null ? (
+      <g
+        className="wb-connector-x"
+        transform={`translate(${midX}, ${midY})`}
+        style={{ pointerEvents: "auto", cursor: "pointer" }}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+      >
+        <circle r="14" fill="#111" stroke="#fff" strokeWidth="2" />
+        <path
+          d="M-5-5l10 10M5-5l-10 10"
+          fill="none"
+          stroke="#fff"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+        />
+      </g>
+    ) : null;
+
+  if (reduce) {
+    return (
+      <g className={`wb-connector ${selected ? "selected" : ""}`}>
+        {hit}
+        <path
+          d={d}
+          fill="none"
+          stroke={color}
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          markerEnd={`url(#${markerId})`}
+          style={{ pointerEvents: "none" }}
+          opacity={0.92}
+        />
+        {delBtn}
+      </g>
+    );
+  }
+
+  const shouldEnter = enabled && !played.current && !collapsing;
+  const fromStack = navDir === "out";
+  const capped = Math.min(delay, 14);
+
+  const enterDelay = fromStack
+    ? 0.12 + capped * 0.042
+    : 0.28 + capped * 0.058;
+  const enterDuration = fromStack ? 0.42 : 0.38;
+
+  return (
+    <motion.g
+      className={`wb-connector ${selected ? "selected" : ""}`}
+      initial={shouldEnter ? { opacity: 0 } : false}
+      animate={collapsing ? { opacity: 0 } : { opacity: 1 }}
+      transition={
+        collapsing
+          ? {
+              duration: 0.2,
+              ease: easeCollapse,
+              delay: capped * 0.012,
+            }
+          : shouldEnter
+            ? { delay: enterDelay, duration: 0.2, ease }
+            : { duration: 0 }
+      }
+      onAnimationComplete={() => {
+        if (!collapsing) played.current = true;
+      }}
+    >
+      {hit}
+      <motion.path
+        d={d}
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        markerEnd={`url(#${markerId})`}
+        style={{ pointerEvents: "none" }}
+        initial={shouldEnter ? { pathLength: 0, opacity: 0 } : false}
+        animate={
+          collapsing
+            ? { pathLength: 0, opacity: 0 }
+            : { pathLength: 1, opacity: 0.92 }
+        }
+        transition={
+          collapsing
+            ? {
+                duration: 0.22,
+                ease: easeCollapse,
+                delay: capped * 0.012,
+              }
+            : shouldEnter
+              ? {
+                  pathLength: {
+                    delay: enterDelay,
+                    duration: enterDuration,
+                    ease,
+                  },
+                  opacity: {
+                    delay: enterDelay,
+                    duration: 0.18,
+                    ease,
+                  },
+                }
+              : { duration: 0 }
+        }
+      />
+      {delBtn}
+    </motion.g>
+  );
+}

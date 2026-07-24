@@ -6,6 +6,7 @@ import {
   IMAGE_CARD_H,
   IMAGE_CARD_W,
   STICKY_COLORS,
+  type BoardConnector,
   type BoardContentCard,
   type BoardItem,
   type BoardSticky,
@@ -26,7 +27,7 @@ function card(partial: Omit<BoardContentCard, "kind">): BoardContentCard {
   return { kind: "contentCard", ...partial };
 }
 
-/** Leggera inclinazione “appiccicata sulla lavagna” */
+/** Slight tilt — "stuck onto the whiteboard" */
 function tilt(i: number): number {
   const angles = [-1.2, 0.9, -0.55, 1.1, -0.9, 0.7, -0.4, 1.3];
   return angles[i % angles.length];
@@ -39,8 +40,8 @@ function paperFor(i: number): BoardContentCard["paper"] {
 }
 
 /**
- * Distribuisce le card sulla larghezza utile (centrate, gap equi),
- * così non restano ammassate a sinistra.
+ * Distributes cards across the usable width (centered, even gaps),
+ * so they don't stay bunched up on the left.
  */
 function spreadRow(
   count: number,
@@ -95,8 +96,8 @@ function spreadRows(
 }
 
 /**
- * Layout freeform per deep-dive sezione: titoli + card/post-it/immagini.
- * Mantiene **grassetto** nel testo (RichText).
+ * Freeform layout for a section deep-dive: headings + cards/post-its/images.
+ * Preserves **bold** in text (RichText).
  */
 export function layoutDeepDive(
   section: ModalSection,
@@ -147,7 +148,7 @@ export function layoutDeepDive(
     );
   }
 
-  // Fascia header: titolo/lede a sx — i contenuti partono sotto
+  // Header band: title/lede on the left — content starts below
   let cursorY = headerTop + 236;
   let hintUnderMethod = false;
 
@@ -168,9 +169,9 @@ export function layoutDeepDive(
         x: methodX,
         y: methodY,
         variant: "body",
-        title: "Method",
+        title: section.methodTitle ?? "What I'm doing",
         text: section.methodNote,
-        eyebrow: "Metodo",
+        eyebrow: section.methodEyebrow ?? "Method",
         rotate: -1.2,
         paper: "butter",
         w: mw,
@@ -178,7 +179,7 @@ export function layoutDeepDive(
       }),
     );
 
-    // Post-it blu sotto la gialla (alto a destra)
+    // Blue post-it below the yellow one (top-right)
     const stickyW = 148;
     const stickyH = 118;
     const stickyGap = 14;
@@ -267,6 +268,128 @@ export function layoutDeepDive(
     cursorY += ch + 32;
   }
 
+  if (section.solutionNotes?.length) {
+    const notes = section.solutionNotes;
+    const nw = Math.min(220, Math.max(178, (right - left - 56) / notes.length));
+    const nh = 168;
+    const positions = spreadRow(notes.length, nw, left, right, cursorY, {
+      maxGap: 28,
+      minGap: 14,
+      wobble: true,
+    });
+    const papers: BoardContentCard["paper"][] = ["mint", "sky", "butter", "peach"];
+    const branchPapers: BoardContentCard["paper"][] = ["white", "cream"];
+    let branchExtra = 0;
+    let maxNoteH = nh;
+
+    notes.forEach((note, i) => {
+      const pos = positions[i];
+      const noteId = `cc-solnote-${section.id}-${note.id}`;
+      const noteH = note.branches?.length ? 188 : nh;
+      maxNoteH = Math.max(maxNoteH, noteH);
+      items.push(
+        card({
+          id: noteId,
+          x: pos.x,
+          y: pos.y,
+          variant: "solution",
+          title: note.title,
+          text: note.text,
+          eyebrow: `0${i + 1} · Answer`,
+          rotate: tilt(i),
+          paper: papers[i % papers.length],
+          w: nw,
+          h: noteH,
+        }),
+      );
+
+      if (note.branches?.length) {
+        const memoryBranches = note.branches.filter((br) => !br.openSectionId);
+        const diveBranches = note.branches.filter((br) => br.openSectionId);
+        const bw = Math.min(168, Math.max(140, (nw - 12) / 2));
+        const bh = 120;
+        const gap = 12;
+        let belowH = 0;
+
+        if (memoryBranches.length) {
+          const rowW = bw * memoryBranches.length + gap * (memoryBranches.length - 1);
+          const startX = pos.x + Math.max(0, (nw - rowW) / 2);
+          const by = pos.y + noteH + 36;
+          memoryBranches.forEach((br, bi) => {
+            const branchId = `cc-solbranch-${section.id}-${note.id}-${br.id}`;
+            items.push(
+              card({
+                id: branchId,
+                x: startX + bi * (bw + gap),
+                y: by,
+                variant: "body",
+                title: br.title,
+                text: br.text,
+                eyebrow: br.eyebrow ?? `Memory · ${bi + 1}`,
+                rotate: tilt(bi + 2),
+                paper: branchPapers[bi % branchPapers.length],
+                w: bw,
+                h: bh,
+              }),
+            );
+            const connector: BoardConnector = {
+              kind: "connector",
+              id: `conn-${noteId}-${branchId}`,
+              fromId: noteId,
+              toId: branchId,
+              color: "#0d9488",
+            };
+            items.push(connector);
+          });
+          belowH = 36 + bh;
+        }
+
+        if (diveBranches.length) {
+          const dw = Math.min(220, Math.max(188, nw + 24));
+          const dh = 228;
+          const diveGap = 20;
+          const diveY = pos.y + noteH + 36 + belowH + (belowH ? 28 : 0);
+          const diveRowW =
+            dw * diveBranches.length + diveGap * Math.max(diveBranches.length - 1, 0);
+          const diveStartX = pos.x + Math.max(0, (nw - diveRowW) / 2);
+          diveBranches.forEach((br, bi) => {
+            const branchId = `cc-solbranch-${section.id}-${note.id}-${br.id}`;
+            items.push(
+              card({
+                id: branchId,
+                x: diveStartX + bi * (dw + diveGap),
+                y: diveY,
+                variant: "idea",
+                title: br.title,
+                text: br.text,
+                eyebrow: br.eyebrow ?? "Deep dive",
+                image: br.image,
+                openSectionId: br.openSectionId,
+                tagKind: "idea",
+                rotate: tilt(bi + 3),
+                paper: "white",
+                w: dw,
+                h: dh,
+              }),
+            );
+            const connector: BoardConnector = {
+              kind: "connector",
+              id: `conn-${noteId}-${branchId}`,
+              fromId: noteId,
+              toId: branchId,
+              color: "#0d9488",
+            };
+            items.push(connector);
+          });
+          belowH = diveY - pos.y - noteH + dh;
+        }
+
+        branchExtra = Math.max(branchExtra, belowH);
+      }
+    });
+    cursorY += maxNoteH + 28 + branchExtra;
+  }
+
   if (section.bugs?.length) {
     const cw = CONTENT_CARD_W + 16;
     const ch = CONTENT_CARD_H + 24;
@@ -285,7 +408,7 @@ export function layoutDeepDive(
           variant: "bug",
           title: b.title,
           text: b.detail,
-          tag: b.kind === "limit" ? "Limite" : "Bug / grounding",
+          tag: b.kind === "limit" ? "Limit" : "Bug / grounding",
           tagKind: b.kind === "limit" ? "limit" : "bug",
           eyebrow: String(i + 1).padStart(2, "0"),
           rotate: tilt(i + 1),
@@ -333,7 +456,7 @@ export function layoutDeepDive(
           title: idea.title,
           text: idea.blurb,
           image: thumb,
-          tag: isBug ? "Bug da segnalare" : "Idea",
+          tag: isBug ? "Bug to report" : "Idea",
           tagKind: isBug ? "bug" : "idea",
           eyebrow: idea.ref
             ? `${idea.ref} · ${String(i + 1).padStart(2, "0")}`
@@ -461,9 +584,9 @@ export function layoutDeepDive(
 
   if (section.semaforo) {
     const chips: [string, string, "green" | "yellow" | "red"][] = [
-      ["Verde", section.semaforo.green, "green"],
-      ["Giallo", section.semaforo.yellow, "yellow"],
-      ["Rosso", section.semaforo.red, "red"],
+      ["Green", section.semaforo.green, "green"],
+      ["Yellow", section.semaforo.yellow, "yellow"],
+      ["Red", section.semaforo.red, "red"],
     ];
     const cw = 200;
     const positions = spreadRow(chips.length, cw, left, right, cursorY, {
@@ -482,7 +605,7 @@ export function layoutDeepDive(
           title: label,
           text,
           accent,
-          eyebrow: "Regola pratica",
+          eyebrow: "Rule of thumb",
           rotate: tilt(i + 4),
           paper: accent === "green" ? "mint" : accent === "yellow" ? "peach" : "blush",
           w: cw,
@@ -578,7 +701,7 @@ export function layoutDeepDive(
     }
   }
 
-  // Body + takeaway sulla stessa fascia, spalmati
+  // Body + takeaway on the same band, spread out
   {
     const extras: { id: string; title: string; text: string; eyebrow?: string; paper: BoardContentCard["paper"] }[] =
       section.body.map((line, i) => ({
@@ -590,7 +713,7 @@ export function layoutDeepDive(
     if (section.takeaway) {
       extras.push({
         id: `cc-takeaway-${section.id}`,
-        title: "In sintesi",
+        title: "Summary",
         text: section.takeaway,
         eyebrow: "Takeaway",
         paper: section.pairs?.length ? "sky" : "blush",
@@ -647,7 +770,7 @@ export function layoutIdeaDetail(
   const marginX = 48;
   const items: BoardItem[] = [];
 
-  const kindLabel = idea.kind === "bug" ? "Bug da segnalare" : "Idea";
+  const kindLabel = idea.kind === "bug" ? "Bug to report" : "Idea";
   const eyebrow = idea.ref
     ? `${kindLabel} · ${idea.ref} · ${String(index + 1).padStart(2, "0")}`
     : `${kindLabel} · ${String(index + 1).padStart(2, "0")}`;
@@ -725,7 +848,7 @@ export function layoutCompetitorDetail(
   const right = w - marginX;
   const items: BoardItem[] = [];
 
-  const eyebrow = `Guida competitor · ${note.kind} · ${String(index + 1).padStart(2, "0")}`;
+  const eyebrow = `Competitor guide · ${note.kind} · ${String(index + 1).padStart(2, "0")}`;
   items.push(makeText("eyebrow", eyebrow, marginX, 56));
   items.push(makeText("title", note.title, marginX, 88));
   items.push({
@@ -821,7 +944,7 @@ export function layoutCompetitorDetail(
   return items;
 }
 
-/** Flusso mobile: stessa mappa concettuale, ordine lineare per scroll */
+/** Mobile flow: same concept map, linear order for scrolling */
 export type MobileDeepBlock =
   | { type: "header"; eyebrow: string; title: string; summary: string }
   | {
@@ -837,6 +960,7 @@ export type MobileDeepBlock =
       blocks?: ContentBlock[];
       openIdeaId?: string;
       openCompetitorId?: string;
+      openSectionId?: string;
       zoomSrc?: string;
       href?: string;
     }
@@ -948,11 +1072,35 @@ export function mobileDeepBlocks(section: ModalSection): MobileDeepBlock[] {
       variant: "bug",
       title: b.title,
       text: b.detail,
-      tag: b.kind === "limit" ? "Limite" : "Bug / grounding",
+      tag: b.kind === "limit" ? "Limit" : "Bug / grounding",
       tagKind: b.kind === "limit" ? "limit" : "bug",
       eyebrow: String(i + 1).padStart(2, "0"),
     });
   });
+
+  if (section.solutionNotes?.length) {
+    section.solutionNotes.forEach((note, i) => {
+      blocks.push({
+        type: "card",
+        variant: "solution",
+        title: note.title,
+        text: note.text,
+        eyebrow: `0${i + 1} · Answer`,
+      });
+      note.branches?.forEach((br) => {
+        blocks.push({
+          type: "card",
+          variant: br.openSectionId ? "idea" : "body",
+          title: br.title,
+          text: br.text,
+          eyebrow: br.eyebrow ?? (br.openSectionId ? "Deep dive" : "Memory"),
+          image: br.image,
+          openSectionId: br.openSectionId,
+          tagKind: br.openSectionId ? "idea" : undefined,
+        });
+      });
+    });
+  }
 
   section.ideas?.forEach((idea, i) => {
     blocks.push({
@@ -961,7 +1109,7 @@ export function mobileDeepBlocks(section: ModalSection): MobileDeepBlock[] {
       title: idea.title,
       text: idea.blurb,
       image: idea.images?.[0]?.src,
-      tag: idea.kind === "bug" ? "Bug da segnalare" : "Idea",
+      tag: idea.kind === "bug" ? "Bug to report" : "Idea",
       tagKind: idea.kind === "bug" ? "bug" : "idea",
       eyebrow: idea.ref
         ? `${idea.ref} · ${String(i + 1).padStart(2, "0")}`
@@ -1012,9 +1160,9 @@ export function mobileDeepBlocks(section: ModalSection): MobileDeepBlock[] {
   if (section.semaforo) {
     (
       [
-        ["Verde", section.semaforo.green, "green"],
-        ["Giallo", section.semaforo.yellow, "yellow"],
-        ["Rosso", section.semaforo.red, "red"],
+        ["Green", section.semaforo.green, "green"],
+        ["Yellow", section.semaforo.yellow, "yellow"],
+        ["Red", section.semaforo.red, "red"],
       ] as const
     ).forEach(([label, text, accent]) => {
       blocks.push({
@@ -1023,7 +1171,7 @@ export function mobileDeepBlocks(section: ModalSection): MobileDeepBlock[] {
         title: label,
         text,
         accent,
-        eyebrow: "Regola pratica",
+        eyebrow: "Rule of thumb",
       });
     });
   }
@@ -1041,7 +1189,7 @@ export function mobileDeepBlocks(section: ModalSection): MobileDeepBlock[] {
     blocks.push({
       type: "card",
       variant: "body",
-      title: "In sintesi",
+      title: "Summary",
       text: section.takeaway,
       eyebrow: "Takeaway",
     });
@@ -1102,7 +1250,7 @@ export function mobileCompetitorBlocks(
 }
 
 export function mobileIdeaBlocks(idea: IdeaItem, index: number): MobileDeepBlock[] {
-  const kindLabel = idea.kind === "bug" ? "Bug da segnalare" : "Idea";
+  const kindLabel = idea.kind === "bug" ? "Bug to report" : "Idea";
   const blocks: MobileDeepBlock[] = [
     {
       type: "header",

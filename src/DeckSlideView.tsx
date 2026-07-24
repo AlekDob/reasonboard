@@ -9,7 +9,7 @@ type Props = { slide: DeckSlideType };
 /** One slide of a ReasonBoard deck — freeform whiteboard on desktop, stack on mobile. */
 export function DeckSlideView({ slide }: Props) {
   const mobile = useIsMobile();
-  const { brandLeft, brandRight, pill, meta, sections, tone } = slide;
+  const { id, brandLeft, brandRight, pill, meta, sections, tone, nudgeNextAfterId } = slide;
 
   if (mobile) {
     return (
@@ -22,6 +22,7 @@ export function DeckSlideView({ slide }: Props) {
         lede={meta.lede}
         sections={sections}
         tone={tone}
+        nudgeNextAfterId={nudgeNextAfterId}
       />
     );
   }
@@ -37,7 +38,12 @@ export function DeckSlideView({ slide }: Props) {
           {pill}
         </div>
       </div>
-      <Whiteboard sections={sections} meta={meta} />
+      <Whiteboard
+        slideId={id}
+        sections={sections}
+        meta={meta}
+        nudgeNextAfterId={nudgeNextAfterId}
+      />
     </div>
   );
 }

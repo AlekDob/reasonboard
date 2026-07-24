@@ -76,6 +76,14 @@ Root board → section deep-dive → idea / competitor detail. Esc / Back climbs
   <em>Deep-dive — titles, stickies, evidence; Back returns to the board</em>
 </p>
 
+## Whiteboard engine
+
+The board isn't a slide deck under the hood — `content.ts` is compiled into freeform items (nodes, cards, stickies, connectors, stickers) by pure layout functions, then rendered on a pannable/zoomable canvas.
+
+In a local `npm run dev` session you also get a DEV-only board editor: multi-select + marquee, group drag, inline copy editing, draw/sticky/arrow tools, and **Save / Reset** to persist manual positions per scene (written to `src/whiteboard/saved-layouts/`, merged back on top of `content.ts` at load time). None of this ships to production — visitors get a read-only, click-to-open board.
+
+Full write-up (architecture, scene keys, `diveNav`, prod vs DEV): [`docs/ENGINE.md`](docs/ENGINE.md)
+
 ## Quick start
 
 ```bash

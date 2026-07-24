@@ -1,6 +1,8 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ModalSection } from "./contentTypes";
+import { clearDiveNav, setDiveNav } from "./diveNav";
 import { NodeArt } from "./NodeArt";
+import { nudgeNextSlide } from "./nudge";
 import { shortBlurb } from "./whiteboard/BoardItems";
 import { MobileDeepBoard } from "./whiteboard/MobileDeepBoard";
 
@@ -14,6 +16,8 @@ type Props = {
   sections: ModalSection[];
   /** Slide with solution tone: title + numbers emphasized */
   tone?: "default" | "solution";
+  /** After closing this section's deep-dive, nudge toward the next slide */
+  nudgeNextAfterId?: string;
 };
 
 export function MobileSlide({
@@ -25,18 +29,143 @@ export function MobileSlide({
   lede,
   sections,
   tone = "default",
+  nudgeNextAfterId,
 }: Props) {
+  const rootSections = useMemo(
+    () => sections.filter((s) => s.onRoot !== false),
+    [sections],
+  );
   const [openId, setOpenId] = useState<string | null>(null);
+  const [parentOpenId, setParentOpenId] = useState<string | null>(null);
   const [ideaId, setIdeaId] = useState<string | null>(null);
+  const [competitorId, setCompetitorId] = useState<string | null>(null);
   const open = sections.find((s) => s.id === openId) ?? null;
   const ideas = open?.ideas ?? [];
   const idea = ideas.find((i) => i.id === ideaId) ?? null;
   const ideaIndex = idea ? ideas.findIndex((i) => i.id === idea.id) : -1;
+  const competitors = open?.competitorNotes ?? [];
+  const competitor = competitors.find((c) => c.id === competitorId) ?? null;
+  const competitorIndex = competitor
+    ? competitors.findIndex((c) => c.id === competitor.id)
+    : -1;
 
   const closeDeep = () => {
+    if (parentOpenId) {
+      setIdeaId(null);
+      setCompetitorId(null);
+      setOpenId(parentOpenId);
+      setParentOpenId(null);
+      return;
+    }
+    const closed = openId;
     setIdeaId(null);
+    setCompetitorId(null);
     setOpenId(null);
+    if (nudgeNextAfterId && closed === nudgeNextAfterId) {
+      nudgeNextSlide();
+    }
   };
+
+  // Footer pager: siblings at the current level + go up
+  useEffect(() => {
+    if (!openId) {
+      clearDiveNav();
+      return;
+    }
+
+    const section = sections.find((s) => s.id === openId) ?? null;
+    const ideaList = section?.ideas ?? [];
+    const competitorList = section?.competitorNotes ?? [];
+
+    let ids: string[] = [];
+    let index = 0;
+    let floor: 1 | 2 = 1;
+    let goTo = (_id: string) => {};
+    let goUp = () => {};
+
+    if (ideaId) {
+      floor = 2;
+      ids = ideaList.map((i) => i.id);
+      index = ids.indexOf(ideaId);
+      goTo = (id) => {
+        setCompetitorId(null);
+        setIdeaId(id);
+      };
+      goUp = () => {
+        setIdeaId(null);
+        setCompetitorId(null);
+      };
+    } else if (competitorId) {
+      floor = 2;
+      ids = competitorList.map((c) => c.id);
+      index = ids.indexOf(competitorId);
+      goTo = (id) => {
+        setIdeaId(null);
+        setCompetitorId(id);
+      };
+      goUp = () => {
+        setIdeaId(null);
+        setCompetitorId(null);
+      };
+    } else if (parentOpenId) {
+      floor = 2;
+      ids = [openId];
+      index = 0;
+      goTo = () => {};
+      goUp = () => {
+        setIdeaId(null);
+        setCompetitorId(null);
+        setOpenId(parentOpenId);
+        setParentOpenId(null);
+      };
+    } else {
+      floor = 1;
+      ids = rootSections.map((s) => s.id);
+      index = ids.indexOf(openId);
+      goTo = (id) => {
+        setIdeaId(null);
+        setCompetitorId(null);
+        setParentOpenId(null);
+        setOpenId(id);
+      };
+      goUp = () => {
+        const closed = openId;
+        setIdeaId(null);
+        setCompetitorId(null);
+        setParentOpenId(null);
+        setOpenId(null);
+        if (nudgeNextAfterId && closed === nudgeNextAfterId) {
+          nudgeNextSlide();
+        }
+      };
+    }
+
+    const safeIndex = Math.max(0, index);
+    setDiveNav({
+      floor,
+      index: safeIndex,
+      total: Math.max(ids.length, 1),
+      goPrev: () => {
+        if (safeIndex <= 0) return;
+        goTo(ids[safeIndex - 1]!);
+      },
+      goNext: () => {
+        if (safeIndex >= ids.length - 1) return;
+        goTo(ids[safeIndex + 1]!);
+      },
+      goUp,
+    });
+
+    return () => clearDiveNav();
+  }, [
+    openId,
+    parentOpenId,
+    ideaId,
+    competitorId,
+    sections,
+    rootSections,
+    nudgeNextAfterId,
+  ]);
 
   return (
     <div
@@ -60,12 +189,14 @@ export function MobileSlide({
         </header>
 
         <ol className="mobile-stack">
-          {sections.map((section, i) => (
+          {rootSections.map((section, i) => (
             <li key={section.id}>
               <article
                 className={`node node-mobile ${i === 0 ? "node-accent" : ""}`}
                 onClick={() => {
                   setIdeaId(null);
+                  setCompetitorId(null);
+                  setParentOpenId(null);
                   setOpenId(section.id);
                 }}
               >
@@ -92,13 +223,15 @@ export function MobileSlide({
                   onClick={(e) => {
                     e.stopPropagation();
                     setIdeaId(null);
+                    setCompetitorId(null);
+                    setParentOpenId(null);
                     setOpenId(section.id);
                   }}
                 >
                   Open
                 </button>
               </article>
-              {i < sections.length - 1 && (
+              {i < rootSections.length - 1 && (
                 <div className="mobile-connector" aria-hidden>
                   <span />
                 </div>
@@ -112,9 +245,33 @@ export function MobileSlide({
         section={open}
         idea={idea}
         ideaIndex={ideaIndex}
+        competitor={competitor}
+        competitorIndex={competitorIndex}
+        parentSection={
+          parentOpenId
+            ? (sections.find((s) => s.id === parentOpenId) ?? null)
+            : null
+        }
         onClose={closeDeep}
-        onBackFromIdea={() => setIdeaId(null)}
-        onOpenIdea={setIdeaId}
+        onBackFromChild={() => {
+          setIdeaId(null);
+          setCompetitorId(null);
+        }}
+        onOpenIdea={(id) => {
+          setCompetitorId(null);
+          setIdeaId(id);
+        }}
+        onOpenCompetitor={(id) => {
+          setIdeaId(null);
+          setCompetitorId(id);
+        }}
+        onOpenSection={(id) => {
+          if (!openId) return;
+          setIdeaId(null);
+          setCompetitorId(null);
+          setParentOpenId(openId);
+          setOpenId(id);
+        }}
       />
     </div>
   );

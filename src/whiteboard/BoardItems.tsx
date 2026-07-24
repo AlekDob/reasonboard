@@ -15,16 +15,34 @@ function isVideoSrc(src?: string): boolean {
   return /\.(mp4|webm|mov)(\?|$)/i.test(src);
 }
 
-function Blocks({ blocks }: { blocks: ContentBlock[] }) {
+function Blocks({
+  blocks,
+  editing,
+  onChangeBlock,
+}: {
+  blocks: ContentBlock[];
+  editing?: boolean;
+  onChangeBlock?: (index: number, text: string) => void;
+}) {
   return (
     <div className="wb-cc-blocks">
-      {blocks.map((b) => (
+      {blocks.map((b, i) => (
         <p
           key={b.label}
           className={`wb-cc-block${b.tone === "fit" ? " wb-cc-block-fit" : ""}`}
         >
           <span className="wb-cc-block-label">{b.label}</span>
-          <RichText text={b.text} />
+          {editing && onChangeBlock ? (
+            <textarea
+              className="wb-cc-edit-field"
+              value={b.text}
+              rows={3}
+              onChange={(e) => onChangeBlock(i, e.target.value)}
+              onPointerDown={(e) => e.stopPropagation()}
+            />
+          ) : (
+            <RichText text={b.text} />
+          )}
         </p>
       ))}
     </div>
@@ -36,21 +54,28 @@ function CardInner({
   clickable,
   onOpenIdea,
   onOpenCompetitor,
+  onOpenSection,
   onZoom,
+  editing,
+  onPatch,
 }: {
   item: BoardContentCard;
   clickable: boolean;
   onOpenIdea?: (ideaId: string) => void;
   onOpenCompetitor?: (competitorId: string) => void;
+  onOpenSection?: (sectionId: string) => void;
   onZoom?: (src: string, caption?: string, href?: string) => void;
+  editing?: boolean;
+  onPatch?: (patch: Partial<BoardContentCard>) => void;
 }) {
   const isImage = item.variant === "image";
+  const isSolution = item.variant === "solution";
   const isIdeaCard = item.variant === "idea";
   const isCompetitorCard = item.variant === "competitor";
-  const zoomSrc = item.zoomSrc ?? (isImage ? item.image : undefined);
+  const zoomSrc = item.zoomSrc ?? (isImage || isSolution ? item.image : undefined);
   const canZoom = Boolean(zoomSrc && onZoom);
   const showThumb = Boolean(
-    item.image && !isImage && (isIdeaCard || isCompetitorCard || item.variant === "persona"),
+    item.image && !isImage && !isSolution && (isIdeaCard || isCompetitorCard || item.variant === "persona"),
   );
   const mediaIsVideo = isVideoSrc(item.image) || isVideoSrc(zoomSrc);
 
@@ -62,8 +87,39 @@ function CardInner({
 
   return (
     <>
+      {isSolution && item.image && (
+        isVideoSrc(item.image) ? (
+          <button
+            type="button"
+            className="wb-cc-media-btn"
+            onClick={canZoom ? openZoom : undefined}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={canZoom ? "Open animated mockup" : undefined}
+          >
+            <video
+              className="wb-cc-media"
+              src={item.image}
+              muted
+              playsInline
+              loop
+              autoPlay
+            />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="wb-cc-media-btn"
+            onClick={canZoom ? openZoom : undefined}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={canZoom ? "Enlarge mockup" : undefined}
+            disabled={!canZoom}
+          >
+            <img className="wb-cc-media" src={item.image} alt="" draggable={false} />
+          </button>
+        )
+      )}
       {showThumb && item.image && (
-        isIdeaCard ? (
+        isIdeaCard || isCompetitorCard ? (
           <div className="wb-cc-thumb-wrap" aria-hidden>
             <img className="wb-cc-thumb" src={item.image} alt="" draggable={false} />
           </div>
@@ -81,7 +137,7 @@ function CardInner({
           <img className="wb-cc-photo" src={item.image} alt="" draggable={false} />
         )
       )}
-      {item.image && !isImage && !showThumb && (
+      {item.image && !isImage && !isSolution && !showThumb && (
         <img className="wb-cc-photo" src={item.image} alt="" draggable={false} />
       )}
       {isImage && item.image && (
@@ -93,17 +149,30 @@ function CardInner({
             playsInline
             loop
             autoPlay
-            onClick={canZoom ? openZoom : undefined}
-            onPointerDown={canZoom ? (e) => e.stopPropagation() : undefined}
           />
         ) : (
-          <img className="wb-cc-hero" src={item.image} alt={item.tag || item.title || ""} draggable={false} />
+          <img
+            className="wb-cc-hero"
+            src={item.image}
+            alt={item.tag || item.title || ""}
+            draggable={false}
+          />
         )
       )}
-      <div className={`wb-cc-body${isImage ? " wb-cc-body-image" : ""}`}>
-        {!isImage && (item.eyebrow || item.tag) && (
+      <div className={`wb-cc-body${isImage ? " wb-cc-body-image" : ""}${isSolution ? " wb-cc-body-solution" : ""}`}>
+        {!isImage && (item.eyebrow || item.tag || editing) && (
           <div className="wb-cc-meta">
-            {item.eyebrow && <span className="wb-cc-eyebrow">{item.eyebrow}</span>}
+            {editing && onPatch ? (
+              <input
+                className="wb-cc-edit-field wb-cc-edit-eyebrow"
+                value={item.eyebrow ?? ""}
+                placeholder="Eyebrow"
+                onChange={(e) => onPatch({ eyebrow: e.target.value })}
+                onPointerDown={(e) => e.stopPropagation()}
+              />
+            ) : (
+              item.eyebrow && <span className="wb-cc-eyebrow">{item.eyebrow}</span>
+            )}
             {item.tag && (
               <span
                 className={`wb-cc-tag wb-cc-tag-${item.tagKind ?? item.variant}${item.accent ? ` wb-cc-tag-${item.accent}` : ""}`}
@@ -113,9 +182,41 @@ function CardInner({
             )}
           </div>
         )}
-        {item.title && <strong className="wb-cc-title">{item.title}</strong>}
+        {editing && onPatch ? (
+          <input
+            className="wb-cc-edit-field wb-cc-edit-title"
+            value={item.title}
+            placeholder="Title"
+            onChange={(e) => onPatch({ title: e.target.value })}
+            onPointerDown={(e) => e.stopPropagation()}
+          />
+        ) : (
+          item.title && <strong className="wb-cc-title">{item.title}</strong>
+        )}
         {item.blocks && item.blocks.length > 0 ? (
-          <Blocks blocks={item.blocks} />
+          <Blocks
+            blocks={item.blocks}
+            editing={editing}
+            onChangeBlock={
+              editing && onPatch
+                ? (index, text) => {
+                    const blocks = item.blocks!.map((b, i) =>
+                      i === index ? { ...b, text } : b,
+                    );
+                    onPatch({ blocks });
+                  }
+                : undefined
+            }
+          />
+        ) : editing && onPatch ? (
+          <textarea
+            className="wb-cc-edit-field wb-cc-edit-text"
+            value={item.text}
+            placeholder="Text"
+            rows={4}
+            onChange={(e) => onPatch({ text: e.target.value })}
+            onPointerDown={(e) => e.stopPropagation()}
+          />
         ) : item.text ? (
           <p className="wb-cc-text">
             <RichText text={item.text} />
@@ -129,7 +230,8 @@ function CardInner({
             <SourceLink href={item.href} />
           </div>
         )}
-        {clickable && (item.openIdeaId || item.openCompetitorId) && (
+        {clickable &&
+          (item.openIdeaId || item.openCompetitorId || item.openSectionId) && (
           <button
             type="button"
             className={`wb-cc-open-btn wb-cc-open-btn-${item.tagKind === "bug" ? "bug" : "idea"}`}
@@ -138,12 +240,13 @@ function CardInner({
               e.stopPropagation();
               if (item.openCompetitorId) onOpenCompetitor?.(item.openCompetitorId);
               else if (item.openIdeaId) onOpenIdea?.(item.openIdeaId);
+              else if (item.openSectionId) onOpenSection?.(item.openSectionId);
             }}
           >
             Open
           </button>
         )}
-        {isImage && canZoom && !clickable && (
+        {(isImage || isSolution) && canZoom && !clickable && (
           <span className="wb-cc-zoom-hint" aria-hidden>
             {mediaIsVideo ? "Click to open" : "Click to zoom"}
           </span>
@@ -157,19 +260,28 @@ export function ContentCardView({
   item,
   onOpenIdea,
   onOpenCompetitor,
+  onOpenSection,
   onZoom,
+  editing,
+  onPatch,
 }: {
   item: BoardContentCard;
   onOpenIdea?: (ideaId: string) => void;
   onOpenCompetitor?: (competitorId: string) => void;
+  onOpenSection?: (sectionId: string) => void;
   onZoom?: (src: string, caption?: string, href?: string) => void;
+  editing?: boolean;
+  onPatch?: (patch: Partial<BoardContentCard>) => void;
 }) {
   const size = itemSize(item);
   const clickable = Boolean(
-    (item.openIdeaId && onOpenIdea) || (item.openCompetitorId && onOpenCompetitor),
+    (item.openIdeaId && onOpenIdea) ||
+      (item.openCompetitorId && onOpenCompetitor) ||
+      (item.openSectionId && onOpenSection),
   );
   const zoomable = Boolean(
-    (item.zoomSrc || (item.variant === "image" && item.image)) && onZoom,
+    (item.zoomSrc || ((item.variant === "image" || item.variant === "solution") && item.image)) &&
+      onZoom,
   );
   const className = [
     "wb-cc",
@@ -179,20 +291,26 @@ export function ContentCardView({
     item.paper ? `wb-cc-paper-${item.paper}` : "wb-cc-paper-cream",
     item.accent ? `wb-cc-accent-${item.accent}` : "",
     clickable ? "wb-cc-clickable" : "",
-    zoomable && item.variant === "image" ? "wb-cc-zoomable" : "",
+    zoomable && (item.variant === "image" || item.variant === "solution")
+      ? "wb-cc-zoomable"
+      : "",
+    editing ? "wb-cc-editing" : "",
   ]
     .filter(Boolean)
     .join(" ");
 
-  // Div (non button): così il wrapper lavagna può trascinare; click breve apre via openIdeaId
+  // Div (not button): lets the board wrapper drag it; a short click opens via openIdeaId
   return (
     <div className={className} style={{ width: size.w, minHeight: size.h }}>
       <CardInner
         item={item}
-        clickable={clickable}
+        clickable={clickable && !editing}
         onOpenIdea={onOpenIdea}
         onOpenCompetitor={onOpenCompetitor}
+        onOpenSection={onOpenSection}
         onZoom={onZoom}
+        editing={editing}
+        onPatch={onPatch}
       />
     </div>
   );
@@ -230,7 +348,27 @@ export function BoardImageView({
   );
 }
 
-export function BoardTextView({ item }: { item: BoardText }) {
+export function BoardTextView({
+  item,
+  editing,
+  onChangeHtml,
+}: {
+  item: BoardText;
+  editing?: boolean;
+  onChangeHtml?: (html: string) => void;
+}) {
+  if (editing && onChangeHtml) {
+    return (
+      <textarea
+        className={`wb-text-edit wb-text-edit-${item.role}`}
+        value={item.html}
+        autoFocus
+        rows={item.role === "title" ? 3 : item.role === "lede" ? 4 : 1}
+        onChange={(e) => onChangeHtml(e.target.value)}
+        onPointerDown={(e) => e.stopPropagation()}
+      />
+    );
+  }
   if (item.role === "title") {
     return (
       <h1 className="headline board-headline">
@@ -248,7 +386,7 @@ export function BoardTextView({ item }: { item: BoardText }) {
   );
 }
 
-/** Blocchi mobile / lista (non freeform) */
+/** Mobile / list blocks (not freeform) */
 export function MobileContentCard({
   variant,
   title,
@@ -261,10 +399,12 @@ export function MobileContentCard({
   blocks,
   openIdeaId,
   openCompetitorId,
+  openSectionId,
   zoomSrc,
   href,
   onOpenIdea,
   onOpenCompetitor,
+  onOpenSection,
   onZoom,
 }: {
   variant: BoardContentCard["variant"];
@@ -278,14 +418,18 @@ export function MobileContentCard({
   blocks?: ContentBlock[];
   openIdeaId?: string;
   openCompetitorId?: string;
+  openSectionId?: string;
   zoomSrc?: string;
   href?: string;
   onOpenIdea?: (id: string) => void;
   onOpenCompetitor?: (id: string) => void;
+  onOpenSection?: (id: string) => void;
   onZoom?: (src: string, caption?: string, href?: string) => void;
 }) {
   const clickable = Boolean(
-    (openIdeaId && onOpenIdea) || (openCompetitorId && onOpenCompetitor),
+    (openIdeaId && onOpenIdea) ||
+      (openCompetitorId && onOpenCompetitor) ||
+      (openSectionId && onOpenSection),
   );
   const item: BoardContentCard = {
     kind: "contentCard",
@@ -303,6 +447,7 @@ export function MobileContentCard({
     blocks,
     openIdeaId,
     openCompetitorId,
+    openSectionId,
     zoomSrc,
     href,
     paper:
@@ -310,13 +455,15 @@ export function MobileContentCard({
         ? "blush"
         : tagKind === "idea" || variant === "competitor"
           ? "sky"
-          : variant === "semaforo" && accent === "green"
+          : variant === "solution"
             ? "mint"
-            : variant === "semaforo" && accent === "yellow"
-              ? "peach"
-              : variant === "semaforo" && accent === "red"
-                ? "blush"
-                : "cream",
+            : variant === "semaforo" && accent === "green"
+              ? "mint"
+              : variant === "semaforo" && accent === "yellow"
+                ? "peach"
+                : variant === "semaforo" && accent === "red"
+                  ? "blush"
+                  : "cream",
   };
   const className = [
     "wb-cc",
@@ -327,7 +474,7 @@ export function MobileContentCard({
     item.paper ? `wb-cc-paper-${item.paper}` : "",
     accent ? `wb-cc-accent-${accent}` : "",
     clickable ? "wb-cc-clickable" : "",
-    zoomSrc && variant === "image" ? "wb-cc-zoomable" : "",
+    zoomSrc && (variant === "image" || variant === "solution") ? "wb-cc-zoomable" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -339,6 +486,7 @@ export function MobileContentCard({
         clickable={clickable}
         onOpenIdea={onOpenIdea}
         onOpenCompetitor={onOpenCompetitor}
+        onOpenSection={onOpenSection}
         onZoom={onZoom}
       />
     </div>
