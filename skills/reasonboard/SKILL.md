@@ -4,12 +4,16 @@ description: >-
   Orchestrate a ReasonBoard UX case: ask domain questions, draft personas,
   competitive notes, solution sections, and write typed src/content.ts.
   Use when the user wants a new reasoning deck, case study board, or to
-  regenerate content for the ReasonBoard whiteboard.
+  regenerate content for the ReasonBoard whiteboard. If they only want the
+  method without the UI, prefer the ux skill first; for live competitor
+  screenshots use the research skill (agent-browser).
 ---
 
 # ReasonBoard orchestrator
 
 Turn a domain into a **typed deck** the whiteboard can open — not a markdown essay.
+
+Prefer starting from the **`ux`** skill if the argument is not yet clear. Use **`research`** when peers need real page captures.
 
 ## Before you start
 

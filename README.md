@@ -10,14 +10,14 @@
 </p>
 
 <p align="center">
-  <img src="public/visuals/readme/hero.png" width="920" alt="ReasonBoard whiteboard hero" />
+  <img src="public/visuals/readme/app-root.png" width="920" alt="ReasonBoard root board — the path from brief to options" />
 </p>
 
 <p align="center">
   <a href="#quick-start"><img src="https://img.shields.io/badge/quick%20start-npm%20run%20dev-0d9488?style=flat-square" alt="Quick start" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-111111?style=flat-square" alt="MIT" /></a>
   <a href="docs/method.md"><img src="https://img.shields.io/badge/method-Brief%20→%20Solution-0f766e?style=flat-square" alt="Method" /></a>
-  <a href="https://github.com/AlekDob/reasonboard"><img src="https://img.shields.io/badge/github-AlekDob%2Freasonboard-111111?style=flat-square" alt="GitHub" /></a>
+  <a href="skills/"><img src="https://img.shields.io/badge/skills-ux%20·%20research-0f766e?style=flat-square" alt="Skills" /></a>
 </p>
 
 ---
@@ -37,7 +37,7 @@ Use it for product strategy, interview case studies, UX audits, competitive tear
 |--------|-------------|
 | Linear flip | Freeform path you can rearrange |
 | Flat bullets | Deep-dive scenes (personas, competitors, ideas) |
-| Copy pasted by hand | Typed `content.ts` + optional AI skills |
+| Copy pasted by hand | Typed `content.ts` + AI skills |
 | One layout | Desktop whiteboard + mobile fallback |
 
 ## Method
@@ -46,25 +46,33 @@ Use it for product strategy, interview case studies, UX audits, competitive tear
 Brief → Personas → Define → Gap → Competitive → Solution → Roadmap
 ```
 
-<p align="center">
-  <img src="public/visuals/readme/method-flow.png" width="880" alt="ReasonBoard method flow" />
-</p>
-
 1. **Brief** — value, opportunities, actions (20 seconds out loud)
 2. **Personas** — usually three blockers (build / prioritize / prove)
 3. **Define** — problem · user · insight · metrics
 4. **Gap** — what’s missing today (often: reactive, generic, non-applied, forgetful)
-5. **Competitive** — honest axis, no “first in the world”
+5. **Competitive** — honest axis; optional live capture via `skills/research` + agent-browser
 6. **Solution** — few clear muscles + phased roadmap
 
 Full write-up: [`docs/method.md`](docs/method.md) · IT: [`docs/method.it.md`](docs/method.it.md)
 
-## Scene stack
+## Scene stack (real product)
 
 Root board → section deep-dive → idea / competitor detail. Esc / Back climbs out.
 
 <p align="center">
-  <img src="public/visuals/readme/scene-stack.png" width="720" alt="Nested whiteboard scenes" />
+  <img src="public/visuals/readme/app-root.png" width="880" alt="Root board with five openable cards" />
+</p>
+
+<p align="center">
+  <em>Root — open a card to dive in</em>
+</p>
+
+<p align="center">
+  <img src="public/visuals/readme/app-deepdive.png" width="880" alt="Deep-dive scene with propose approve apply" />
+</p>
+
+<p align="center">
+  <em>Deep-dive — titles, stickies, evidence; Back returns to the board</em>
 </p>
 
 ## Quick start
@@ -80,26 +88,34 @@ Open http://127.0.0.1:5173/
 
 **Controls (desktop):** Space = pan · pinch / ctrl+scroll = zoom · Open = deep-dive · PageUp/Down = slide · F = fullscreen
 
+## Skills
+
+Canonical skills ship in [`skills/`](skills/) (also wired under `.claude/skills/` for Cursor / Claude Code).
+
+| Skill | Does |
+|-------|------|
+| [`ux`](skills/ux/) | UX reasoning method — questions → personas → define → gap → competitive → solution |
+| [`research`](skills/research/) | Competitive capture with **agent-browser** (screenshots + notes into the deck) |
+| [`reasonboard`](skills/reasonboard/) | Writes typed `src/content.ts` for this app |
+| `reasonboard-personas` / `competitive` / `solution` | Thin specialists the orchestrator calls |
+
+Install into your global Claude skills (optional):
+
+```bash
+ln -s "$(pwd)/skills/ux" ~/.claude/skills/ux
+ln -s "$(pwd)/skills/research" ~/.claude/skills/research
+ln -s "$(pwd)/skills/reasonboard" ~/.claude/skills/reasonboard
+```
+
+`research` expects [`agent-browser`](https://github.com/vercel-labs/agent-browser) on your PATH (`npm i -g agent-browser`). It does **not** vendor the whole browser skill — it tells the agent when and how to use it.
+
 ## Bring your own case
 
-1. Edit [`src/content.ts`](src/content.ts) — or ask an agent with the ReasonBoard skills  
+1. Ask an agent with the `ux` + `reasonboard` skills, **or** edit [`src/content.ts`](src/content.ts) by hand  
 2. Keep types from [`src/contentTypes.ts`](src/contentTypes.ts)  
 3. Drop images in `public/visuals/`  
 
 Schema: [`docs/content-schema.md`](docs/content-schema.md)
-
-### AI skills (Cursor / Claude)
-
-Point an agent at this repo and run the orchestrator skill:
-
-| Skill | Does |
-|-------|------|
-| `reasonboard` | Asks 5–8 domain questions → drafts the whole deck → writes `content.ts` |
-| `reasonboard-personas` | Three persona cards (builder / prioritizer / executive) |
-| `reasonboard-competitive` | Competitor notes on reactive → proactive → agentic |
-| `reasonboard-solution` | Solution muscles + phased roadmap |
-
-Skills live in [`.claude/skills/`](.claude/skills/).
 
 ## Demo deck
 
@@ -124,9 +140,10 @@ npm run build
 
 ```
 reasonboard/
+├── skills/               # ux · research · reasonboard (canonical)
+├── .claude/skills/       # symlinks for in-repo agents
 ├── docs/                 # method + schema
-├── .claude/skills/       # AI authoring skills
-├── public/visuals/       # demo + README art
+├── public/visuals/       # demo + README screenshots
 └── src/
     ├── content.ts        # ← your deck (swap this)
     ├── contentTypes.ts

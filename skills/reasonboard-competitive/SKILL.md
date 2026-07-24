@@ -33,5 +33,6 @@ Map notes on: **reactive → proactive → agentic** (and peer vs enterprise).
 - 2–4 notes max for a sharp board.
 - No “first in the world.” No fragile survey ROI as a pillar.
 - If the user lacks public product access, use **clearly fictional** peers labeled as such (like the demo).
+- For **live pages + screenshots**, use the **`research`** skill (agent-browser) first, then fill these fields from captures.
 - `validates` ≠ copy their marketing; say what pattern it proves.
 - `goesFurther` must connect to the solution muscles on slide 2.
