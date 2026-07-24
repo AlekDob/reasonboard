@@ -923,7 +923,7 @@ export function Whiteboard({ sections, meta }: Props) {
                 className="wb-connector-del"
                 onClick={() => deleteItem(selectedConnector)}
               >
-                Elimina freccia
+                Delete arrow
               </button>
             )}
 
@@ -1087,7 +1087,7 @@ export function Whiteboard({ sections, meta }: Props) {
                             e.stopPropagation();
                             deleteItem(item.id);
                           }}
-                          aria-label="Elimina"
+                          aria-label="Delete"
                         >
                           ×
                         </button>
